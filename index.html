@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Gamifier</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* General Body and Container Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212; /* Deep dark background */
+            color: #e0e0e0; /* Light gray text for readability */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #1e1e1e; /* Slightly lighter dark background for container */
+            border-radius: 0; /* No rounded corners */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3); /* Stronger, sharper shadow */
+            padding: 2.5rem;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem; /* Increased spacing between sections */
+            border: 1px solid #333; /* Subtle border for definition */
+        }
+        h1 {
+            color: #ffffff; /* White for main heading */
+            font-weight: 800; /* Extra bold */
+            font-size: 2.8rem; /* Larger heading */
+            text-align: center;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.08em; /* More pronounced letter spacing */
+            text-transform: uppercase; /* Uppercase for impact */
+        }
+        h2 {
+            color: #a0a0a0; /* Muted gray for subheadings */
+            font-weight: 700;
+            font-size: 2rem; /* Larger subheadings */
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #333; /* Underline effect */
+            padding-bottom: 0.5rem;
+        }
+        h3 {
+            color: #808080; /* Even lighter gray */
+            font-weight: 600;
+            font-size: 1.4rem;
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Input Group Styling */
+        .input-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: #a0a0a0;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid #444; /* Darker border */
+            border-radius: 0; /* No rounded corners */
+            background-color: #2a2a2a; /* Match container background */
+            color: #ffffff; /* White text in inputs */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #00bcd4; /* Cyan focus border */
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.4); /* Cyan glow effect */
+        }
+        .input-group select option {
+            background-color: #2a2a2a; /* Dark background for options */
+            color: #ffffff; /* White text for options */
+        }
+
+        /* Button Styling */
+        button {
+            background-color: #00bcd4; /* Vibrant Cyan */
+            color: white;
+            padding: 0.9rem 2.2rem;
+            border-radius: 0; /* No rounded corners */
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3); /* Subtle cyan shadow */
+            letter-spacing: 0.1em; /* More pronounced letter spacing */
+            text-transform: uppercase; /* Uppercase for impact */
+            border-bottom: 3px solid #00838f; /* Darker bottom border for depth */
+        }
+        button:hover {
+            background-color: #0097a7; /* Darker cyan on hover */
+            box-shadow: 0 8px 20px rgba(0, 188, 212, 0.4);
+            border-bottom: 3px solid #006064;
+        }
+        button:active {
+            background-color: #00838f;
+            box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
+            border-bottom: 3px solid #00838f; /* Keep border on active */
+            transform: translateY(1px); /* Slight press effect */
+        }
+
+        /* Navigation Button Styling */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2rem;
+            gap: 10px; /* Adjusted gap */
+            border-bottom: 1px solid #333; /* Separator line */
+            padding-bottom: 10px;
+        }
+        .nav-buttons button {
+            flex: 1;
+            padding: 0.8rem; /* Slightly smaller padding for tabs */
+            background-color: #2a2a2a; /* Darker gray for inactive tabs */
+            color: #a0a0a0; /* Lighter gray text */
+            font-weight: 600;
+            border-radius: 0; /* No rounded corners */
+            transition: background-color 0.2s, color 0.2s, border-bottom 0.2s;
+            box-shadow: none; /* Remove shadow for nav buttons */
+            border-bottom: 2px solid transparent; /* Highlight border */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .nav-buttons button.active {
+            background-color: #00bcd4; /* Vibrant Cyan for active tab */
+            color: white;
+            box-shadow: 0 2px 10px rgba(0, 188, 212, 0.3);
+            border-bottom: 2px solid #ffffff; /* White underline for active */
+        }
+        .nav-buttons button:hover:not(.active) {
+            background-color: #3a3a3a; /* Slightly lighter on hover */
+            color: #e0e0e0;
+            border-bottom: 2px solid #00bcd4; /* Cyan underline on hover */
+        }
+
+        /* Page Content Sections */
+        .page-section {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .page-section.active {
+            display: flex;
+        }
+
+        /* Stat Cards Styling */
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+            background-color: #2a2a2a; /* Even darker background for stat sections */
+            border-radius: 0; /* No rounded corners */
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3); /* Inner shadow */
+            border: 1px solid #333;
+        }
+        .stat-item {
+            background-color: #3a3a3a; /* Darker background for individual stat cards */
+            border-radius: 0; /* No rounded corners */
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid #444;
+            transition: transform 0.2s ease-out, box-shadow 0.2s;
+        }
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #a0a0a0;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 2.2rem; /* Slightly larger values */
+            font-weight: 800;
+            color: #00bcd4; /* Vibrant Cyan for values */
+        }
+
+        /* Daily Summary Styling */
+        .daily-summary-card {
+            padding: 1.5rem;
+            background-color: #2a3a2a; /* Darker green for daily summary */
+            border-radius: 0; /* No rounded corners */
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            color: #a7f3d0; /* Light green text */
+            border: 1px solid #444;
+        }
+        .daily-summary-card p {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .daily-summary-card span {
+            font-weight: 800;
+            color: #68d391; /* Brighter green for values */
+        }
+
+        /* Badge Grid Styling */
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 1.25rem;
+            padding: 1.5rem;
+            background-color: #2a2a2a;
+            border-radius: 0; /* No rounded corners */
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+        }
+        .badge-item {
+            background-color: #3a3a3a; /* Darker background for badges */
+            border-radius: 0; /* No rounded corners */
+            padding: 1.25rem;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #a0a0a0; /* Lighter gray text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            border: 1px solid #444;
+            transition: transform 0.2s ease-out, box-shadow 0.2s;
+        }
+        .badge-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .badge-item.unlocked {
+            background-color: #004d40; /* Dark teal for unlocked, more subtle */
+            color: #80cbc4; /* Lighter teal text */
+            border-color: #00bcd4;
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.2);
+        }
+        .badge-emoji {
+            font-size: 2.8rem; /* Larger emoji */
+            line-height: 1;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4)); /* Stronger shadow on emoji */
+        }
+        .badge-item.unlocked .badge-emoji {
+            animation: pulse 1.5s infinite alternate; /* Subtle pulse animation for unlocked */
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        /* Workout Log Item Styling */
+        .workout-log-item {
+            background-color: #2a2a2a; /* Match stat sections background */
+            border-radius: 0; /* No rounded corners */
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #333;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        .workout-log-item strong {
+            color: #ffffff; /* White for strong text */
+        }
+        .workout-log-item ul {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 0.75rem;
+        }
+        .workout-log-item ul li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #e0e0e0; /* Ensure list item text is visible */
+        }
+        .workout-log-item ul li::before {
+            content: '›'; /* Modern arrow bullet point */
+            color: #00bcd4; /* Cyan bullet */
+            position: absolute;
+            left: 0;
+            font-size: 1.4em; /* Larger arrow */
+            line-height: 1;
+            font-weight: 800;
+        }
+
+        /* Data Transfer Area */
+        textarea#dataTransferArea {
+            background-color: #121212; /* Darkest background for textarea */
+            border-color: #333;
+            color: #e0e0e0;
+            border-radius: 0; /* No rounded corners */
+        }
+
+        /* Message Box */
+        .message-box {
+            background-color: #1e1e1e; /* Dark background */
+            color: white;
+            border: 2px solid #00bcd4; /* Cyan border */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+            border-radius: 0; /* No rounded corners */
+        }
+        .message-box button {
+            background-color: #00bcd4;
+            box-shadow: none; /* Remove shadow for message box button */
+            border-bottom: 3px solid #00838f;
+        }
+        .message-box button:hover {
+            background-color: #0097a7;
+            transform: none; /* No lift effect */
+            box-shadow: none;
+            border-bottom: 3px solid #006064;
+        }
+        .message-box button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container">
+        <h1 class="text-3xl mb-4 text-center">💪 Fitness Gamifier</h1>
+
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <button id="navWorkout" class="active">Workout Log</button>
+            <button id="navStats">Stats</button>
+            <button id="navBadges">Badges</button>
+            <button id="navHistory">History</button>
+        </div>
+
+        <!-- Workout Log Page -->
+        <div id="workoutPage" class="page-section active">
+            <!-- Overall Stats -->
+            <div class="stat-card-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Total Points</div>
+                    <div id="totalPointsDisplay" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Weight Lifted (lbs)</div>
+                    <div id="totalWeightDisplay" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Daily Streak</div>
+                    <div id="streakDisplay" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <!-- Workout Input Form -->
+            <h2 class="text-2xl mt-6 mb-4">Log New Workout</h2>
+            <form id="workoutForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="input-group">
+                    <label for="exerciseSelect">Exercise:</label>
+                    <select id="exerciseSelect" class="block w-full"></select>
+                </div>
+                <div class="input-group">
+                    <label for="setsInput">Sets:</label>
+                    <input type="number" id="setsInput" value="3" min="1" class="block w-full">
+                </div>
+                <div class="input-group">
+                    <label for="repsInput">Reps per Set:</label>
+                    <input type="number" id="repsInput" value="10" min="1" class="block w-full">
+                </div>
+                <div class="input-group">
+                    <label for="weightInput">Weight (lbs):</label>
+                    <input type="number" id="weightInput" value="100" min="0" class="block w-full">
+                </div>
+                <div class="md:col-span-2 flex justify-center mt-4">
+                    <button type="submit" class="w-full md:w-auto">Add Workout</button>
+                </div>
+            </form>
+
+            <!-- Daily Summary -->
+            <h2 class="text-2xl mt-6 mb-4">Today's Summary</h2>
+            <div class="daily-summary-card">
+                <p class="text-lg font-semibold">Points Today: <span id="dailyPointsDisplay" class="font-bold">0</span></p>
+                <p class="text-lg font-semibold">Weight Lifted Today: <span id="dailyWeightDisplay" class="font-bold">0</span> lbs</p>
+            </div>
+        </div>
+
+        <!-- Stats Page -->
+        <div id="statsPage" class="page-section">
+            <h2 class="text-2xl mb-4">Your Overall Stats</h2>
+            <div class="stat-card-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Total Points</div>
+                    <div id="statsTotalPointsDisplay" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Weight Lifted (lbs)</div>
+                    <div id="statsTotalWeightDisplay" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Current Streak</div>
+                    <div id="statsStreakDisplay" class="stat-value">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Badges Unlocked</div>
+                    <div id="statsBadgesUnlockedDisplay" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <h3 class="text-xl mt-6 mb-4">Personal Bests</h3>
+            <div id="personalBestsDisplay" class="bg-gray-900 p-4 shadow-inner max-h-96 overflow-y-auto border border-gray-700">
+                <p id="noPersonalBestsMessage" class="text-gray-500 text-center">No personal bests recorded yet.</p>
+                <!-- Personal bests will be rendered here by JavaScript -->
+            </div>
+
+            <h3 class="text-xl mt-6 mb-4">Data Management</h3>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button id="exportDataBtn" class="flex-1">Export Data (JSON)</button>
+                <button id="importDataBtn" class="flex-1">Import Data (JSON)</button>
+            </div>
+            <textarea id="dataTransferArea" class="w-full mt-4 p-3 border border-gray-700 resize-y hidden" rows="6" placeholder="Paste your JSON data here to import, or copy exported data from here."></textarea>
+        </div>
+
+        <!-- Badges Page -->
+        <div id="badgesPage" class="page-section">
+            <h2 class="text-2xl mb-4">Your Badges</h2>
+            <div id="badgesDisplay" class="badge-grid">
+                <!-- Badges will be rendered here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Workout History Page -->
+        <div id="historyPage" class="page-section">
+            <h2 class="text-2xl mb-4">Workout History</h2>
+            <div id="workoutHistoryDisplay" class="bg-gray-900 p-4 shadow-inner max-h-96 overflow-y-auto border border-gray-700">
+                <!-- Workout history will be rendered here by JavaScript -->
+                <p id="noHistoryMessage" class="text-gray-500 text-center">No workouts logged yet.</p>
+            </div>
+        </div>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="message-box">
+            <p id="messageText" class="text-lg"></p>
+            <button id="messageBoxCloseBtn">OK</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
