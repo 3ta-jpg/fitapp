@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitness Gamified Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🏋️ Fitness Tracker</h1>
+
+    <section id="summary">
+      <div><strong>Total Points:</strong> <span id="totalPoints">0</span></div>
+      <div><strong>Total Weight:</strong> <span id="totalWeight">0</span> lbs</div>
+      <div><strong>Current Streak:</strong> <span id="streak">0</span> days</div>
+    </section>
+
+    <section id="log-workout">
+      <h2>Log Workout</h2>
+      <form id="workoutForm">
+        <label>
+          Exercise:
+          <select id="exerciseSelect"></select>
+        </label>
+        <label>
+          Sets: <input type="number" id="sets" min="1" value="1" required>
+        </label>
+        <label>
+          Reps per Set: <input type="number" id="reps" min="1" value="10" required>
+        </label>
+        <label>
+          Weight (lbs): <input type="number" id="weight" min="0" value="50" required>
+        </label>
+        <button type="submit">Add Workout</button>
+      </form>
+      <div id="workoutFeedback"></div>
+    </section>
+
+    <section id="daily-log">
+      <h2>Today's Log</h2>
+      <ul id="logList"></ul>
+    </section>
+
+    <section id="badges">
+      <h2>Badges Earned</h2>
+      <ul id="badgeList"></ul>
+    </section>
+
+    <section id="data-tools">
+      <h2>Data Tools</h2>
+      <button id="exportData">Export Data</button>
+      <button id="importDataPrompt">Import Data</button>
+    </section>
+  </div>
+
+  <script src="exercises.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
