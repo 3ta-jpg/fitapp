@@ -63,11 +63,14 @@ const BADGES = [
         return totalEntries >= 50;
     }},
     { name: "Heavy Hitter", emoji: "🏋️", description: "Lifted 500 lbs in a single set!", unlockCondition: (stats) => {
-        const today = getFormattedDate(new Date());
-        const todayWorkouts = stats.workoutHistory.find(w => w.date === today);
-        if (todayWorkouts) {
-            for (const workout of todayWorkouts.workouts) {
-                if (workout.totalWeightForSet >= 500) return true;
+        // This condition needs to check across all workouts, not just today's, for historical data.
+        // It's better to check the 'workoutHistory' directly for any workout meeting the criteria.
+        for (const day of stats.workoutHistory) {
+            for (const workout of day.workouts) {
+                // Assuming totalWeightForSet is the total weight for all sets of that exercise entry.
+                // If it's for a *single* set, then it needs to be calculated per set in handleWorkoutSubmit.
+                // For now, let's assume 'weight * reps' for a single set.
+                if (workout.weight * workout.reps >= 500) return true;
             }
         }
         return false;
@@ -85,22 +88,51 @@ const BADGES = [
 ];
 
 // --- DOM Elements ---
+// Navigation Buttons
+const navWorkoutBtn = document.getElementById('navWorkout');
+const navStatsBtn = document.getElementById('navStats');
+const navBadgesBtn = document.getElementById('navBadges');
+const navHistoryBtn = document.getElementById('navHistory');
+
+// Page Sections
+const workoutPage = document.getElementById('workoutPage');
+const statsPage = document.getElementById('statsPage');
+const badgesPage = document.getElementById('badgesPage');
+const historyPage = document.getElementById('historyPage');
+
+// Workout Page Elements
 const exerciseSelect = document.getElementById('exerciseSelect');
 const setsInput = document.getElementById('setsInput');
 const repsInput = document.getElementById('repsInput');
 const weightInput = document.getElementById('weightInput');
 const workoutForm = document.getElementById('workoutForm');
-const totalPointsDisplay = document.getElementById('totalPointsDisplay');
-const totalWeightDisplay = document.getElementById('totalWeightDisplay');
-const streakDisplay = document.getElementById('streakDisplay');
+const totalPointsDisplay = document.getElementById('totalPointsDisplay'); // On workout page
+const totalWeightDisplay = document.getElementById('totalWeightDisplay'); // On workout page
+const streakDisplay = document.getElementById('streakDisplay'); // On workout page
 const dailyPointsDisplay = document.getElementById('dailyPointsDisplay');
 const dailyWeightDisplay = document.getElementById('dailyWeightDisplay');
+
+// Stats Page Elements
+const statsTotalPointsDisplay = document.getElementById('statsTotalPointsDisplay');
+const statsTotalWeightDisplay = document.getElementById('statsTotalWeightDisplay');
+const statsStreakDisplay = document.getElementById('statsStreakDisplay');
+const statsBadgesUnlockedDisplay = document.getElementById('statsBadgesUnlockedDisplay');
+const personalBestsDisplay = document.getElementById('personalBestsDisplay');
+const noPersonalBestsMessage = document.getElementById('noPersonalBestsMessage');
+
+// Badges Page Elements
 const badgesDisplay = document.getElementById('badgesDisplay');
+
+// History Page Elements
 const workoutHistoryDisplay = document.getElementById('workoutHistoryDisplay');
 const noHistoryMessage = document.getElementById('noHistoryMessage');
+
+// Data Management Elements (shared between pages, but placed on Stats page)
 const exportDataBtn = document.getElementById('exportDataBtn');
 const importDataBtn = document.getElementById('importDataBtn');
 const dataTransferArea = document.getElementById('dataTransferArea');
+
+// Message Box
 const messageBox = document.getElementById('messageBox');
 const messageText = document.getElementById('messageText');
 const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
@@ -225,15 +257,26 @@ function populateExerciseDropdown() {
 }
 
 /**
- * Updates all UI elements with current state.
+ * Updates all UI elements with current state. This function is now called when switching pages.
  */
 function updateUI() {
+    // Update elements on the Workout Log Page
     totalPointsDisplay.textContent = totalPoints.toFixed(2);
     totalWeightDisplay.textContent = totalWeightLifted.toFixed(2);
     streakDisplay.textContent = currentStreak;
-
     renderDailySummary();
+
+    // Update elements on the Stats Page
+    statsTotalPointsDisplay.textContent = totalPoints.toFixed(2);
+    statsTotalWeightDisplay.textContent = totalWeightLifted.toFixed(2);
+    statsStreakDisplay.textContent = currentStreak;
+    statsBadgesUnlockedDisplay.textContent = badgesEarned.length;
+    renderPersonalBests();
+
+    // Update elements on the Badges Page
     renderBadges();
+
+    // Update elements on the History Page
     renderWorkoutHistory();
 }
 
@@ -318,6 +361,34 @@ function renderWorkoutHistory() {
     });
 }
 
+/**
+ * Renders personal bests for each exercise.
+ */
+function renderPersonalBests() {
+    personalBestsDisplay.innerHTML = ''; // Clear existing
+    if (Object.keys(personalBests).length === 0) {
+        noPersonalBestsMessage.style.display = 'block';
+        return;
+    } else {
+        noPersonalBestsMessage.style.display = 'none';
+    }
+
+    const ul = document.createElement('ul');
+    ul.classList.add('list-disc', 'list-inside', 'space-y-2');
+
+    for (const exerciseName in personalBests) {
+        const pb = personalBests[exerciseName];
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+            <strong>${exerciseName}:</strong> ${pb.weight} lbs for ${pb.reps} reps (Points: ${pb.points.toFixed(2)})
+            <span class="text-gray-500 text-sm"> - ${new Date(pb.timestamp).toLocaleDateString()}</span>
+        `;
+        ul.appendChild(listItem);
+    }
+    personalBestsDisplay.appendChild(ul);
+}
+
+
 // --- Gamification Logic ---
 
 /**
@@ -331,47 +402,55 @@ function updateDailyStreak() {
 
     let streak = 0;
     let lastWorkoutDate = null;
-    let currentDate = new Date();
 
     // Sort workout history by date in ascending order
     const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    for (let i = sortedHistory.length - 1; i >= 0; i--) {
+    // Get today's date normalized to midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find the most recent workout day
+    const mostRecentWorkoutDay = sortedHistory[sortedHistory.length - 1];
+    const mostRecentDate = new Date(mostRecentWorkoutDay.date);
+    mostRecentDate.setHours(0, 0, 0, 0);
+
+    // Check if the most recent workout was today
+    if (mostRecentDate.getTime() === today.getTime()) {
+        streak = 1;
+        lastWorkoutDate = today;
+    } else {
+        // Check if the most recent workout was yesterday
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+
+        if (mostRecentDate.getTime() === yesterday.getTime()) {
+            streak = 1;
+            lastWorkoutDate = yesterday;
+        } else {
+            currentStreak = 0; // Streak broken if not today or yesterday
+            return;
+        }
+    }
+
+    // Iterate backwards through history from the second most recent day
+    for (let i = sortedHistory.length - 2; i >= 0; i--) {
         const workoutDay = new Date(sortedHistory[i].date);
         workoutDay.setHours(0, 0, 0, 0); // Normalize to start of day
 
-        if (i === sortedHistory.length - 1) {
-            // Check if the most recent workout was today or yesterday
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
+        const expectedPreviousDay = new Date(lastWorkoutDate);
+        expectedPreviousDay.setDate(lastWorkoutDate.getDate() - 1);
+        expectedPreviousDay.setHours(0, 0, 0, 0);
 
-            if (workoutDay.getTime() === today.getTime()) {
-                streak = 1;
-                lastWorkoutDate = today;
-            } else if (workoutDay.getTime() === yesterday.getTime()) {
-                streak = 1;
-                lastWorkoutDate = yesterday;
-            } else {
-                streak = 0; // No workout today or yesterday, streak broken
-                break;
-            }
-        } else {
-            // Check if current workout day is exactly one day before the last counted workout day
-            const expectedPreviousDay = new Date(lastWorkoutDate);
-            expectedPreviousDay.setDate(lastWorkoutDate.getDate() - 1);
-            expectedPreviousDay.setHours(0, 0, 0, 0);
-
-            if (workoutDay.getTime() === expectedPreviousDay.getTime()) {
-                streak++;
-                lastWorkoutDate = workoutDay;
-            } else if (workoutDay.getTime() < expectedPreviousDay.getTime()) {
-                // Gap found, streak broken
-                break;
-            }
-            // If workoutDay is the same as lastWorkoutDate (multiple workouts on same day), continue
+        if (workoutDay.getTime() === expectedPreviousDay.getTime()) {
+            streak++;
+            lastWorkoutDate = workoutDay;
+        } else if (workoutDay.getTime() < expectedPreviousDay.getTime()) {
+            // Gap found, streak broken
+            break;
         }
+        // If workoutDay is the same as lastWorkoutDate (multiple workouts on same day), continue
     }
     currentStreak = streak;
 }
@@ -446,7 +525,9 @@ function handleWorkoutSubmit(event) {
         totalPointsForWorkout += pointsForSet;
         totalWeightForWorkout += totalWeightForSet;
 
-        // Update personal bests
+        // Update personal bests for the *individual set* that achieved it
+        // A personal best is usually for a single set, not the sum of all sets for an exercise entry.
+        // We'll store the weight and reps of the best *single set* performed for that exercise.
         if (!personalBests[exerciseName] || pointsForSet > personalBests[exerciseName].points) {
             personalBests[exerciseName] = {
                 weight: weight,
@@ -463,8 +544,8 @@ function handleWorkoutSubmit(event) {
         sets: sets,
         reps: reps,
         weight: weight,
-        pointsEarned: totalPointsForWorkout, // Total points for all sets of this exercise
-        totalWeightForSet: totalWeightForWorkout // Total weight lifted for all sets of this exercise
+        pointsEarned: totalPointsForWorkout, // Total points for all sets of this exercise entry
+        totalWeightForSet: totalWeightForWorkout // Total weight lifted for all sets of this exercise entry
     };
 
     dailyWorkoutEntry.workouts.push(workoutData);
@@ -474,7 +555,7 @@ function handleWorkoutSubmit(event) {
 
     updateDailyStreak(); // Update streak after logging a workout
     saveData();
-    updateUI();
+    updateUI(); // Update all UI elements after a workout
     checkBadges();
 
     // Clear form inputs
@@ -505,12 +586,16 @@ function handleExportData() {
  * Handles importing data from JSON.
  */
 function handleImportData() {
+    // Toggle visibility of the textarea first
     dataTransferArea.classList.toggle('hidden');
+
+    // If it's now visible, clear it and set placeholder
     if (!dataTransferArea.classList.contains('hidden')) {
-        dataTransferArea.value = ''; // Clear for pasting
+        dataTransferArea.value = '';
         dataTransferArea.placeholder = "Paste your JSON data here and click 'Import Data' again.";
         showMessageBox("Paste your JSON data into the text area and click 'Import Data' again.");
     } else {
+        // If it's now hidden, attempt to import
         const jsonString = dataTransferArea.value;
         if (jsonString) {
             try {
@@ -531,6 +616,7 @@ function handleImportData() {
                     personalBests = importedData.personalBests;
 
                     saveData(); // Save imported data
+                    updateDailyStreak(); // Recalculate streak based on new history
                     updateUI();
                     checkBadges(); // Re-check badges in case new conditions are met
                     showMessageBox("Data imported successfully!");
@@ -547,6 +633,34 @@ function handleImportData() {
     }
 }
 
+// --- Page Navigation ---
+
+/**
+ * Shows a specific page and hides others.
+ * @param {HTMLElement} pageToShow - The page element to display.
+ * @param {HTMLElement} activeNavButton - The navigation button to mark as active.
+ */
+function showPage(pageToShow, activeNavButton) {
+    // Hide all pages
+    workoutPage.classList.remove('active');
+    statsPage.classList.remove('active');
+    badgesPage.classList.remove('active');
+    historyPage.classList.remove('active');
+
+    // Deactivate all nav buttons
+    navWorkoutBtn.classList.remove('active');
+    navStatsBtn.classList.remove('active');
+    navBadgesBtn.classList.remove('active');
+    navHistoryBtn.classList.remove('active');
+
+    // Show the selected page
+    pageToShow.classList.add('active');
+    // Activate the selected nav button
+    activeNavButton.classList.add('active');
+
+    // Update UI for the newly active page
+    updateUI();
+}
 
 // --- Initialization ---
 
@@ -560,7 +674,16 @@ function initApp() {
     updateUI();
     checkBadges(); // Check badges on load for any newly met conditions
 
-    // Event Listeners
+    // Set initial page to Workout Log
+    showPage(workoutPage, navWorkoutBtn);
+
+    // Event Listeners for Navigation
+    navWorkoutBtn.addEventListener('click', () => showPage(workoutPage, navWorkoutBtn));
+    navStatsBtn.addEventListener('click', () => showPage(statsPage, navStatsBtn));
+    navBadgesBtn.addEventListener('click', () => showPage(badgesPage, navBadgesBtn));
+    navHistoryBtn.addEventListener('click', () => showPage(historyPage, navHistoryBtn));
+
+    // Event Listeners for Workout Form and Data Management
     workoutForm.addEventListener('submit', handleWorkoutSubmit);
     exportDataBtn.addEventListener('click', handleExportData);
     importDataBtn.addEventListener('click', handleImportData);
